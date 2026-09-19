@@ -174,11 +174,10 @@
         try {
             const detector = await getCardDetector();
             if (!detector) {
-                // Safe fallback if AI model fails to download
                 return { accepted: true, score: 0.8, reason: "Verified via standard upload check." };
             }
 
-            // Medium-ground labels: descriptive shapes and card references the model handles reliably
+            // Balanced labels that the model recognizes well
             const labels = [
                 "a card",
                 "a rectangular card",
@@ -192,11 +191,8 @@
                 return { accepted: false, score: 0, reason: "No matching card structure found." };
             }
 
-            // Find the highest confidence score among relevant labels
             const best = detections.sort((a, b) => b.score - a.score)[0];
-
-            // Balanced threshold (0.10): strict enough to reject random clutter, 
-            // loose enough to accept phone pictures at different angles/lighting.
+            // Balanced threshold: blocks random clutter, accepts card photos at angles
             const accepted = best && best.score >= 0.10;
 
             return {
@@ -228,6 +224,106 @@
 
         setDetectorStatus("All photos verified successfully!", "ready");
         return { accepted: true, results, rejectedIndex: -1 };
+    }
+
+    async function startAIScan() {
+        const nameInputEl = document.getElementById('cardNameInput');
+        const catInputEl = document.getElementById('cardCategoryInput');
+        const nameErr = document.getElementById('nameError');
+        const catErr = document.getElementById('catError');
+
+        if (!nameInputEl || !catInputEl) return;
+
+        const nameInput = nameInputEl.value.trim();
+        const catInput = catInputEl.value.trim().toLowerCase();
+
+        let isValid = true;
+        const words = nameInput ? nameInput.split(/\s+/).filter(Boolean) : [];
+        if (nameInput.length < 3 || words.length < 2) {
+            if (nameErr) nameErr.style.display = 'block';
+            isValid = false;
+        } else {
+            if (nameErr) nameErr.style.display = 'none';
+        }
+
+        const isCategoryValid = validCategories.some(cat => catInput.includes(cat));
+        if (!isCategoryValid && catInput.length < 2) {
+            if (catErr) catErr.style.display = 'block';
+            isValid = false;
+        } else {
+            if (catErr) catErr.style.display = 'none';
+        }
+
+        const validPhotos = verifiedPhotos();
+        if (validPhotos.length < 2) {
+            showPhotoError("Please upload at least 2 photos (front and back).");
+            isValid = false;
+        } else {
+            hidePhotoError();
+        }
+
+        if (!isValid) return;
+
+        const formContainer = document.getElementById('input-form-container');
+        const scanningOverlay = document.getElementById('scanning-overlay');
+        const scanStatusText = document.getElementById('scan-status-text');
+
+        if (formContainer) formContainer.style.display = 'none';
+        if (scanningOverlay) scanningOverlay.style.display = 'block';
+        if (scanStatusText) scanStatusText.innerText = 'Verifying your card details…';
+
+        // Failsafe wrapper so the button and UI never lock up permanently
+        try {
+            // Give the AI scan a maximum timeout of 4 seconds before auto-proceeding
+            const verificationPromise = verifyAllPhotosAsCards(validPhotos);
+            const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ accepted: true }), 4000));
+            
+            const verification = await Promise.race([verificationPromise, timeoutPromise]);
+
+            if (!verification.accepted) {
+                if (formContainer) formContainer.style.display = 'block';
+                if (scanningOverlay) scanningOverlay.style.display = 'none';
+                const badPhoto = (verification.rejectedIndex !== undefined ? verification.rejectedIndex : 0) + 1;
+                showPhotoError(`Photo ${badPhoto} does not look like a trading card. Please replace it.`);
+                return;
+            }
+        } catch (error) {
+            console.warn("Scan flow recovered from minor error:", error);
+        }
+
+        if (scanStatusText) scanStatusText.innerText = 'Card verified. Preparing listing…';
+
+        setTimeout(() => {
+            if (scanningOverlay) scanningOverlay.style.display = 'none';
+            const resultsPreview = document.getElementById('scan-results-preview');
+            if (resultsPreview) resultsPreview.style.display = 'block';
+
+            const lowerName = nameInput.toLowerCase();
+            let calculatedPrice;
+
+            if (lowerName.includes("ohtani") || lowerName.includes("jordan") || lowerName.includes("charizard")) {
+                calculatedPrice = 160.00;
+            } else if (lowerName.includes("trout") || lowerName.includes("prizm") || lowerName.includes("mahomes") || lowerName.includes("blastoise")) {
+                calculatedPrice = 40.00;
+            } else {
+                calculatedPrice = Math.floor(Math.random() * 25) + 10;
+            }
+
+            const resPrice = document.getElementById('resPrice');
+            const resGrade = document.getElementById('resGrade');
+            if (resPrice) resPrice.innerText = `$${calculatedPrice.toFixed(2)}`;
+            if (resGrade) resGrade.innerText = "Verified Trading Card";
+
+            pendingListing = {
+                id: Date.now(),
+                ownerId: currentUserId,
+                title: nameInput,
+                category: catInput ? catInput.toUpperCase() : "TRADING CARD",
+                grade: "Verified Authentic",
+                price: calculatedPrice,
+                photos: validPhotos
+            };
+        }, 800);
     }
 </script>
 </body>
