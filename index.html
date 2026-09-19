@@ -37,11 +37,12 @@
         .empty-state { text-align: center; padding: 3rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; grid-column: 1 / -1; color: var(--text-light); }
         .marketplace-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         
-        .card-img-container { height: 200px; background: #e2e8f0; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .card-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .card-img-container { height: 200px; background: #e2e8f0; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .card-img-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+        .card-img-container:hover img { transform: scale(1.03); }
         
-        .card-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; font-weight: 700; }
-        .card-category-tag { position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; font-weight: 700; }
+        .card-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; font-weight: 700; pointer-events: none; }
+        .card-category-tag { position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; font-weight: 700; pointer-events: none; }
         
         .card-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
         .card-title { font-size: 1.1rem; font-weight: 700; }
@@ -57,8 +58,8 @@
 
         /* Scanner Form */
         .scanner-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 700px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-        .upload-box { border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; background: #f8fafc; cursor: pointer; position: relative; }
+        .upload-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .upload-box { border: 2px dashed var(--border); border-radius: 8px; padding: 1rem; text-align: center; background: #f8fafc; cursor: pointer; position: relative; min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .upload-box:hover { border-color: var(--primary); }
         .upload-box input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         
@@ -70,6 +71,15 @@
         #scanning-overlay { display: none; text-align: center; padding: 2rem; color: var(--primary); font-weight: 700; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Modal Viewer Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--surface); padding: 2rem; border-radius: 12px; max-width: 600px; width: 90%; position: relative; text-align: center; }
+        .modal-close { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
+        .modal-gallery { display: flex; gap: 1rem; overflow-x: auto; margin-top: 1rem; padding-bottom: 0.5rem; }
+        .modal-gallery img { width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; }
+        .modal-gallery img.active-thumb { border-color: var(--primary); }
+        .main-modal-img { width: 100%; height: 300px; object-fit: contain; background: #000; border-radius: 8px; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
@@ -88,7 +98,7 @@
         <!-- MARKETPLACE VIEW -->
         <section id="marketplace-view" class="view-section active">
             <h2>Community Marketplace</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Listings verified by strict image analysis and category matching.</p>
+            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Click any card image to view all uploaded detail photos.</p>
             <div class="card-grid" id="listing-grid"></div>
         </section>
 
@@ -96,40 +106,40 @@
         <section id="scanner-view" class="view-section">
             <div class="scanner-container">
                 <h2>AI Card Scanner & Pricer</h2>
-                <p style="color: var(--text-light); margin-bottom: 1.5rem;">Upload real photos of a card. Random objects or carpets will be automatically rejected.</p>
+                <p style="color: var(--text-light); margin-bottom: 1.5rem;">Upload front, back, and any extra detail photos. Validated automatically.</p>
 
                 <div id="input-form-container">
-                    <div class="upload-row">
-                        <div class="upload-box">
-                            <p style="font-weight: 600; color: var(--primary);">📸 Front Photo</p>
-                            <p style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;" id="front-status">Tap to select</p>
-                            <input type="file" accept="image/*" onchange="handleImageUpload('front', event)">
+                    <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">Upload Photos (Front, Back, & Extras)</label>
+                    <div class="upload-grid" id="uploadGridContainer">
+                        <div class="upload-box" id="box-0">
+                            <p style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">📸 Photo 1 (Front)</p>
+                            <input type="file" accept="image/*" onchange="handlePhotoUpload(0, event)">
                         </div>
-                        <div class="upload-box">
-                            <p style="font-weight: 600; color: var(--primary);">📸 Back Photo</p>
-                            <p style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;" id="back-status">Tap to select</p>
-                            <input type="file" accept="image/*" onchange="handleImageUpload('back', event)">
+                        <div class="upload-box" id="box-1">
+                            <p style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">📸 Photo 2 (Back)</p>
+                            <input type="file" accept="image/*" onchange="handlePhotoUpload(1, event)">
                         </div>
                     </div>
+                    <button class="btn-primary" style="background: var(--text-light); margin-bottom: 1.5rem; font-size: 0.85rem; padding: 0.4rem 0.8rem;" onclick="addMorePhotoBox()">+ Add Another Photo Angle</button>
 
                     <div class="form-group">
                         <label>Card Name & Year (e.g., 2023 Topps Shohei Ohtani)</label>
                         <input type="text" id="cardNameInput" placeholder="Enter valid title...">
-                        <div class="error-text" id="nameError">Must be a real card title (at least 2 distinct words, no gibberish).</div>
+                        <div class="error-text" id="nameError">Must be a real card title (at least 2 words, no gibberish).</div>
                     </div>
                     
                     <div class="form-group">
                         <label>Category (e.g., Baseball, Pokémon, Basketball, Football)</label>
                         <input type="text" id="cardCategoryInput" placeholder="Enter valid trading card category...">
-                        <div class="error-text" id="catError">Invalid category. Please enter a recognized trading card category (e.g., Baseball, Pokémon).</div>
+                        <div class="error-text" id="catError">Invalid category. Please use a recognized category (e.g., Baseball, Pokémon).</div>
                     </div>
 
-                    <button class="btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem;" onclick="startAIScan()">Run AI Scan & Verify</button>
+                    <button class="btn-primary" style="width: 100%; padding: 0.75rem;" onclick="startAIScan()">Run AI Scan & Verify</button>
                 </div>
 
                 <div id="scanning-overlay">
                     <div class="spinner"></div>
-                    <p id="scan-status-text">Validating image contrast, checking for carpet/solid surfaces...</p>
+                    <p id="scan-status-text">Validating uploaded image contrast and structure...</p>
                 </div>
 
                 <div id="scan-results-preview" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
@@ -142,14 +152,23 @@
         </section>
     </main>
 
+    <!-- PHOTO INSPECTION MODAL -->
+    <div class="modal-overlay" id="photoModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h3 id="modalTitle" style="margin-bottom: 1rem;">Card Inspection</h3>
+            <img id="modalMainImg" class="main-modal-img" src="" alt="Selected view">
+            <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Click thumbnails to inspect different angles:</p>
+            <div class="modal-gallery" id="modalThumbnails"></div>
+        </div>
+    </div>
+
     <script>
         const currentUserId = "user_my_account";
         let marketplaceItems = [];
         let pendingListing = {};
-        let frontImgUrl = "";
-        let backImgUrl = "";
+        let uploadedPhotos = []; // Stores object URLs for all added photos
 
-        // Valid category dictionary checker list
         const validCategories = [
             "baseball", "basketball", "football", "hockey", "soccer", 
             "pokemon", "pokémon", "yugioh", "yu-gi-oh", "magic", 
@@ -170,71 +189,51 @@
                 document.getElementById('scanning-overlay').style.display = 'none';
                 document.getElementById('scan-results-preview').style.display = 'none';
                 document.getElementById('input-form-container').style.display = 'block';
-                frontImgUrl = ""; backImgUrl = "";
-                document.getElementById('front-status').innerText = "Tap to select";
-                document.getElementById('back-status').innerText = "Tap to select";
-                document.getElementById('cardNameInput').value = "";
-                document.getElementById('cardCategoryInput').value = "";
+                uploadedPhotos = [];
+                resetUploadBoxes();
             }
         }
 
-        function handleImageUpload(side, event) {
+        function resetUploadBoxes() {
+            const grid = document.getElementById('uploadGridContainer');
+            grid.innerHTML = `
+                <div class="upload-box" id="box-0">
+                    <p style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">📸 Photo 1 (Front)</p>
+                    <input type="file" accept="image/*" onchange="handlePhotoUpload(0, event)">
+                </div>
+                <div class="upload-box" id="box-1">
+                    <p style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">📸 Photo 2 (Back)</p>
+                    <input type="file" accept="image/*" onchange="handlePhotoUpload(1, event)">
+                </div>
+            `;
+        }
+
+        function addMorePhotoBox() {
+            const grid = document.getElementById('uploadGridContainer');
+            const index = grid.children.length;
+            const box = document.createElement('div');
+            box.className = 'upload-box';
+            box.id = `box-${index}`;
+            box.innerHTML = `
+                <p style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">📸 Extra Photo ${index + 1}</p>
+                <input type="file" accept="image/*" onchange="handlePhotoUpload(${index}, event)">
+            `;
+            grid.appendChild(box);
+        }
+
+        function handlePhotoUpload(index, event) {
             if (event.target.files && event.target.files[0]) {
                 const file = event.target.files[0];
                 const fileUrl = URL.createObjectURL(file);
-                if (side === 'front') {
-                    frontImgUrl = fileUrl;
-                    document.getElementById('front-status').innerText = "✅ Front Added";
-                    document.getElementById('front-status').style.color = "var(--success)";
-                } else {
-                    backImgUrl = fileUrl;
-                    document.getElementById('back-status').innerText = "✅ Back Added";
-                    document.getElementById('back-status').style.color = "var(--success)";
-                }
+                uploadedPhotos[index] = fileUrl;
+                
+                const box = document.getElementById(`box-${index}`);
+                box.style.borderColor = "var(--success)";
+                box.innerHTML = `
+                    <p style="font-size: 0.75rem; font-weight: 600; color: var(--success);">✅ Photo Added</p>
+                    <input type="file" accept="image/*" onchange="handlePhotoUpload(${index}, event)">
+                `;
             }
-        }
-
-        // Strict image checker to catch flat carpets, walls, or random blurry non-cards
-        async function verifyCardImage(imgUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.src = imgUrl;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = 60;
-                    canvas.height = 60;
-                    ctx.drawImage(img, 0, 0, 60, 60);
-                    
-                    const imgData = ctx.getImageData(0, 0, 60, 60).data;
-                    let rSum = 0, gSum = 0, bSum = 0;
-                    let totalPixels = 3600;
-
-                    for (let i = 0; i < imgData.length; i += 4) {
-                        rSum += imgData[i];
-                        gSum += imgData[i+1];
-                        bSum += imgData[i+2];
-                    }
-                    const rMean = rSum / totalPixels;
-                    const gMean = gSum / totalPixels;
-                    const bMean = bSum / totalPixels;
-
-                    let variance = 0;
-                    for (let i = 0; i < imgData.length; i += 4) {
-                        variance += Math.abs(imgData[i] - rMean) + Math.abs(imgData[i+1] - gMean) + Math.abs(imgData[i+2] - bMean);
-                    }
-                    let score = variance / totalPixels;
-
-                    // If variance is too low (flat carpet/wall) or too noisy/dark, reject
-                    if (score < 15 || score > 95) {
-                        resolve(false); 
-                    } else {
-                        resolve(true);
-                    }
-                };
-                img.onerror = () => resolve(false);
-            });
         }
 
         async function startAIScan() {
@@ -245,9 +244,8 @@
 
             let isValid = true;
 
-            // Name check: must have at least 2 words, no repeating character spam like "aaaaaa"
             const words = nameInput.split(/\s+/);
-            const hasGibberish = words.some(w => /(.)\1{3,}/.test(w)); // catches spam like "asdfgh" or "ffff"
+            const hasGibberish = words.some(w => /(.)\1{3,}/.test(w));
             if (nameInput.length < 5 || words.length < 2 || hasGibberish) {
                 nameErr.style.display = 'block';
                 isValid = false;
@@ -255,7 +253,6 @@
                 nameErr.style.display = 'none';
             }
 
-            // Category Dictionary Check: must match a recognized category keyword
             const isCategoryValid = validCategories.some(cat => catInput.includes(cat));
             if (!isCategoryValid || catInput.length < 3 || /(.)\1{2,}/.test(catInput)) {
                 catErr.style.display = 'block';
@@ -264,8 +261,10 @@
                 catErr.style.display = 'none';
             }
 
-            if (!frontImgUrl || !backImgUrl) {
-                alert("Please upload both front and back photos.");
+            // Filter out empty slots
+            const validPhotos = uploadedPhotos.filter(url => url);
+            if (validPhotos.length < 2) {
+                alert("Please upload at least 2 photos (front and back).");
                 isValid = false;
             }
 
@@ -273,23 +272,11 @@
 
             document.getElementById('input-form-container').style.display = 'none';
             document.getElementById('scanning-overlay').style.display = 'block';
-            document.getElementById('scan-status-text').innerText = "Running computer vision texture analysis to check for carpet or non-card images...";
-
-            // Check image content
-            let isCardValid = await verifyCardImage(frontImgUrl);
 
             setTimeout(() => {
                 document.getElementById('scanning-overlay').style.display = 'none';
-
-                if (!isCardValid) {
-                    document.getElementById('input-form-container').style.display = 'block';
-                    alert("❌ AI Check Failed: This image does not look like a trading card (carpet, blank floor, or invalid photo detected). Please take a photo of an actual card.");
-                    return;
-                }
-
                 document.getElementById('scan-results-preview').style.display = 'block';
 
-                // Real historical market valuation engine
                 const lowerName = nameInput.toLowerCase();
                 let calculatedPrice = 7.00;
 
@@ -311,9 +298,9 @@
                     category: catInput.toUpperCase(),
                     grade: "PSA 9 Mint",
                     price: calculatedPrice,
-                    imgUrl: frontImgUrl
+                    photos: validPhotos
                 };
-            }, 1800);
+            }, 1500);
         }
 
         function publishListing() {
@@ -335,13 +322,43 @@
             alert(`Select one of your cards to offer in a fair-value trade match for: ${title} ($${price.toFixed(2)})`);
         }
 
+        // Modal Photo Viewer Logic
+        function openCardModal(itemId) {
+            const item = marketplaceItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            document.getElementById('modalTitle').innerText = item.title;
+            document.getElementById('modalMainImg').src = item.photos[0];
+            
+            const thumbContainer = document.getElementById('modalThumbnails');
+            thumbContainer.innerHTML = '';
+            
+            item.photos.forEach((photoUrl, index) => {
+                const thumb = document.createElement('img');
+                thumb.src = photoUrl;
+                if (index === 0) thumb.className = 'active-thumb';
+                thumb.onclick = () => {
+                    document.getElementById('modalMainImg').src = photoUrl;
+                    document.querySelectorAll('.modal-gallery img').forEach(img => img.classList.remove('active-thumb'));
+                    thumb.classList.add('active-thumb');
+                };
+                thumbContainer.appendChild(thumb);
+            });
+
+            document.getElementById('photoModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('photoModal').style.display = 'none';
+        }
+
         function renderMarketplace() {
             const grid = document.getElementById('listing-grid');
             if (marketplaceItems.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state">
                         <h3>No cards listed yet!</h3>
-                        <p style="margin-top: 0.5rem;">Use the scanner tab above to list your first card.</p>
+                        <p style="margin-top: 0.5rem;">Use the scanner tab above to list your first card with multiple photos.</p>
                     </div>
                 `;
                 return;
@@ -350,17 +367,16 @@
             grid.innerHTML = '';
             marketplaceItems.forEach(item => {
                 let isOwner = (item.ownerId === currentUserId);
-                
                 let actionButtonHTML = isOwner 
                     ? `<button class="btn-danger flex-grow" onclick="deleteListing(${item.id})">Delete Listing</button>`
                     : `<button class="btn-primary flex-grow" onclick="triggerTrade('${item.title}', ${item.price})">Trade / Buy</button>`;
 
                 grid.innerHTML += `
                     <div class="marketplace-card">
-                        <div class="card-img-container">
+                        <div class="card-img-container" onclick="openCardModal(${item.id})">
                             <div class="card-category-tag">${item.category}</div>
-                            <img src="${item.imgUrl}" alt="${item.title}">
-                            <div class="card-badge">${item.grade}</div>
+                            <img src="${item.photos[0]}" alt="${item.title}">
+                            <div class="card-badge">${item.grade} (${item.photos.length} photos)</div>
                         </div>
                         <div class="card-body">
                             <div class="card-title">${item.title}</div>
