@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardSync - Open Marketplace & AI Trader</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--background); color: var(--text); line-height: 1.5; }
+
+        header { background-color: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .nav-tabs { display: flex; gap: 0.5rem; }
+        .nav-btn { background: none; border: none; padding: 0.5rem 1rem; font-weight: 600; color: var(--text-light); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+        .nav-btn.active, .nav-btn:hover { background-color: #eff6ff; color: var(--primary); }
+
+        main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; font-weight: 700; }
+
+        /* Marketplace Grid */
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .empty-state { text-align: center; padding: 3rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; grid-column: 1 / -1; color: var(--text-light); }
+        .marketplace-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .card-img-placeholder { height: 180px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--text-light); font-weight: 600; font-size: 0.9rem; position: relative; }
+        .card-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; font-weight: 700; }
+        .card-category-tag { position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 4px; font-weight: 700; }
+        .card-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
+        .card-title { font-size: 1.1rem; font-weight: 700; }
+        .card-details { font-size: 0.85rem; color: var(--text-light); }
+        .price-tag { font-size: 1.25rem; font-weight: 800; color: var(--success); margin-top: auto; padding-top: 0.5rem; }
+        .action-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        
+        button { cursor: pointer; font-weight: 600; border-radius: 6px; padding: 0.5rem 1rem; border: none; transition: background 0.2s; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .flex-grow { flex-grow: 1; }
+
+        /* AI Scanner Form */
+        .scanner-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 700px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .upload-box { border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; background: #f8fafc; cursor: pointer; position: relative; }
+        .upload-box:hover { border-color: var(--primary); }
+        .upload-box input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+        
+        #scanning-overlay { display: none; text-align: center; padding: 2rem; color: var(--primary); font-weight: 700; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <span>⚡ CardSync Global</span>
+        </div>
+        <nav class="nav-tabs">
+            <button class="nav-btn active" onclick="switchTab('marketplace')">Marketplace Feed</button>
+            <button class="nav-btn" onclick="switchTab('scanner')">+ Scan & List Card</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- MARKETPLACE VIEW -->
+        <section id="marketplace-view" class="view-section active">
+            <h2>Community Marketplace</h2>
+            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Live user-submitted listings evaluated by AI computer vision and priced via market APIs.</p>
+            <div class="card-grid" id="listing-grid">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+        <!-- SCANNER VIEW -->
+        <section id="scanner-view" class="view-section">
+            <div class="scanner-container">
+                <h2>AI Card Scanner & Pricer</h2>
+                <p style="color: var(--text-light); margin-bottom: 1.5rem;">Take or upload clear photos of the front and back. The system will figure out the true condition, grading level, and market value automatically.</p>
+
+                <div id="input-form-container">
+                    <div class="upload-row">
+                        <div class="upload-box">
+                            <p style="font-weight: 600; color: var(--primary);">📸 Upload Front Photo</p>
+                            <p style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;" id="front-status">Click or tap to snap</p>
+                            <input type="file" accept="image/*" onchange="handleImageUpload('front', event)">
+                        </div>
+                        <div class="upload-box">
+                            <p style="font-weight: 600; color: var(--primary);">📸 Upload Back Photo</p>
+                            <p style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;" id="back-status">Click or tap to snap</p>
+                            <input type="file" accept="image/*" onchange="handleImageUpload('back', event)">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Card Name & Year (e.g., 1986 Fleer Michael Jordan)</label>
+                        <input type="text" id="cardNameInput" placeholder="Enter card name...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Category (Type any category: Baseball, Pokémon, Magic, F1, etc.)</label>
+                        <input type="text" id="cardCategoryInput" placeholder="e.g., Formula 1, Magic: The Gathering, Football">
+                    </div>
+
+                    <button class="btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem;" onclick="startAIScan()">Run AI Scan & Fetch API Price</button>
+                </div>
+
+                <div id="scanning-overlay">
+                    <div class="spinner"></div>
+                    <p>AI Computer Vision analyzing surface edges and corners...</p>
+                    <p style="font-size: 0.85rem; color: var(--text-light); font-weight: normal; margin-top: 0.3rem;">Connecting to market pricing API...</p>
+                </div>
+
+                <div id="scan-results-preview" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+                    <h3 style="color: var(--success); margin-bottom: 0.5rem;">✅ Analysis Complete!</h3>
+                    <p><strong>Detected Grade:</strong> <span id="resGrade">PSA 9 Mint</span></p>
+                    <p><strong>Condition Notes:</strong> Clean borders, minimal centering shift.</p>
+                    <p><strong>API Fair Market Valuation:</strong> <span id="resPrice" style="font-size: 1.2rem; font-weight: 800; color: var(--success);">$0.00</span></p>
+                    <button class="btn-primary" style="margin-top: 1rem; width: 100%;" onclick="publishListing()">Publish Listing to Marketplace</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let marketplaceItems = []; // Starts completely empty as requested
+        let pendingListing = {};
+        let hasFront = false;
+        let hasBack = false;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            if(tabName === 'marketplace') {
+                document.getElementById('marketplace-view').classList.add('active');
+                event.target.classList.add('active');
+                renderMarketplace();
+            } else {
+                document.getElementById('scanner-view').classList.add('active');
+                event.target.classList.add('active');
+                document.getElementById('scanning-overlay').style.display = 'none';
+                document.getElementById('scan-results-preview').style.display = 'none';
+                document.getElementById('input-form-container').style.display = 'block';
+                hasFront = false; hasBack = false;
+                document.getElementById('front-status').innerText = "Click or tap to snap";
+                document.getElementById('back-status').innerText = "Click or tap to snap";
+            }
+        }
+
+        function handleImageUpload(side, event) {
+            if (event.target.files && event.target.files[0]) {
+                if (side === 'front') {
+                    hasFront = true;
+                    document.getElementById('front-status').innerText = "✅ Front Photo Added";
+                    document.getElementById('front-status').style.color = "var(--success)";
+                } else {
+                    hasBack = true;
+                    document.getElementById('back-status').innerText = "✅ Back Photo Added";
+                    document.getElementById('back-status').style.color = "var(--success)";
+                }
+            }
+        }
+
+        function startAIScan() {
+            const name = document.getElementById('cardNameInput').value.trim();
+            const category = document.getElementById('cardCategoryInput').value.trim();
+
+            if (!name || !category) {
+                alert("Please fill in both the card name and its category.");
+                return;
+            }
+            if (!hasFront || !hasBack) {
+                alert("Please upload both front and back photos to simulate the AI condition check.");
+                return;
+            }
+
+            document.getElementById('input-form-container').style.display = 'none';
+            document.getElementById('scanning-overlay').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('scanning-overlay').style.display = 'none';
+                document.getElementById('scan-results-preview').style.display = 'block';
+
+                let mockPrice = Math.floor(Math.random() * 120) + 15;
+                let grades = ["PSA 10 Gem Mint", "PSA 9 Mint", "PSA 8 Near Mint-Mint", "Raw (Near Mint)"];
+                let chosenGrade = grades[Math.floor(Math.random() * grades.length)];
+
+                document.getElementById('resPrice').innerText = `$${mockPrice}.00`;
+                document.getElementById('resGrade').innerText = chosenGrade;
+
+                pendingListing = {
+                    id: Date.now(),
+                    title: name,
+                    category: category,
+                    grade: chosenGrade,
+                    price: mockPrice
+                };
+            }, 2000);
+        }
+
+        function publishListing() {
+            marketplaceItems.unshift(pendingListing);
+            alert("Listing successfully published to the live feed!");
+            switchTab('marketplace');
+            document.querySelectorAll('.nav-btn')[0].classList.add('active');
+            document.querySelectorAll('.nav-btn')[1].classList.remove('active');
+        }
+
+        function renderMarketplace() {
+            const grid = document.getElementById('listing-grid');
+            if (marketplaceItems.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No cards listed yet!</h3>
+                        <p style="margin-top: 0.5rem;">Be the first person to scan a card and populate the marketplace.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = '';
+            marketplaceItems.forEach(item => {
+                grid.innerHTML += `
+                    <div class="marketplace-card">
+                        <div class="card-img-placeholder">
+                            <div class="card-category-tag">${item.category}</div>
+                            <span>[ User Uploaded Photo ]</span>
+                            <div class="card-badge">${item.grade}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">${item.title}</div>
+                            <div class="card-details">Verified via AI Scanner</div>
+                            <div class="price-tag">$${item.price.toFixed(2)}</div>
+                            <div class="action-row">
+                                <button class="btn-primary flex-grow" onclick="alert('Initiating buy or secure trade offer for ${item.title}!')">Buy / Trade</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        renderMarketplace();
+    </script>
+</body>
+</html>
