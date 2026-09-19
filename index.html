@@ -62,21 +62,16 @@
         .upload-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         .upload-box { border: 2px dashed var(--border); border-radius: 8px; padding: 1rem; text-align: center; background: #f8fafc; cursor: pointer; position: relative; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; overflow: hidden; }
         .upload-box:hover { border-color: var(--primary); }
-        .upload-box input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .upload-box.checking { border-color: var(--primary); border-style: solid; }
         .upload-box.ok { border-color: var(--success); border-style: solid; }
-        .upload-box.bad { border-color: var(--danger); border-style: solid; background: #fef2f2; }
         .box-label { font-size: 0.78rem; font-weight: 700; color: var(--primary); }
         .box-note { font-size: 0.7rem; color: var(--text-light); line-height: 1.3; max-width: 100%; }
         .box-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; }
-        .mini-spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
 
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
         .form-group input { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
         .error-text { color: var(--danger); font-size: 0.8rem; margin-top: 0.25rem; display: none; }
         #photoError { display: none; color: var(--danger); font-size: 0.85rem; margin-bottom: 1rem; }
-        #verifyBanner { font-size: 0.8rem; color: var(--text-light); background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin-bottom: 1rem; }
 
         #scanning-overlay { display: none; text-align: center; padding: 2rem; color: var(--primary); font-weight: 700; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem auto; }
@@ -93,7 +88,6 @@
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) { --background: #0b1220; --surface: #121b2c; --text: #e2e8f0; --text-light: #94a3b8; --border: #26334a; }
             :root:not([data-theme="light"]) .upload-box { background: #0f1727; }
-            :root:not([data-theme="light"]) #verifyBanner { background: #0f1727; }
         }
         :root[data-theme="dark"] { --background: #0b1220; --surface: #121b2c; --text: #e2e8f0; --text-light: #94a3b8; --border: #26334a; }
     </style>
@@ -118,10 +112,9 @@
         <section id="scanner-view" class="view-section">
             <div class="scanner-container">
                 <h2>AI Card Scanner &amp; Pricer</h2>
-                <p style="color: var(--text-light); margin-bottom: 1.5rem;">Upload front, back, and any extra detail photos. Each photo is checked and only accepted if it actually shows a trading card.</p>
+                <p style="color: var(--text-light); margin-bottom: 1.5rem;">Upload front, back, and any extra detail photos of your card.</p>
 
                 <div id="input-form-container">
-                    <div id="verifyBanner">Checking photo verification…</div>
                     <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">Upload Photos (Front, Back, &amp; Extras)</label>
                     <div class="upload-grid" id="uploadGridContainer"></div>
                     <div id="photoError"></div>
@@ -129,26 +122,26 @@
 
                     <div class="form-group">
                         <label>Card Name &amp; Year (e.g., 2023 Topps Shohei Ohtani)</label>
-                        <input type="text" id="cardNameInput" placeholder="Enter valid title...">
-                        <div class="error-text" id="nameError">Must be a real card title (at least 2 words, no gibberish).</div>
+                        <input type="text" id="cardNameInput" placeholder="Enter card title...">
+                        <div class="error-text" id="nameError">Must enter a valid card title (at least 2 words).</div>
                     </div>
 
                     <div class="form-group">
                         <label>Category (e.g., Baseball, Pokémon, Basketball, Football)</label>
-                        <input type="text" id="cardCategoryInput" placeholder="Enter valid trading card category...">
-                        <div class="error-text" id="catError">Invalid category. Please use a recognized category (e.g., Baseball, Pokémon).</div>
+                        <input type="text" id="cardCategoryInput" placeholder="Enter category...">
+                        <div class="error-text" id="catError">Please use a recognized category (e.g., Baseball, Pokémon).</div>
                     </div>
 
-                    <button class="btn-primary" style="width: 100%; padding: 0.75rem;" onclick="startAIScan()">Run AI Scan &amp; Verify</button>
+                    <button class="btn-primary" style="width: 100%; padding: 0.75rem;" onclick="startAIScan()">Run AI Scan &amp; Price</button>
                 </div>
 
                 <div id="scanning-overlay">
                     <div class="spinner"></div>
-                    <p id="scan-status-text">Validating uploaded image contrast and structure...</p>
+                    <p id="scan-status-text">Analyzing card condition and checking past sales data...</p>
                 </div>
 
                 <div id="scan-results-preview" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
-                    <h3 style="color: var(--success); margin-bottom: 0.5rem;">✅ Card Verified Successfully!</h3>
+                    <h3 style="color: var(--success); margin-bottom: 0.5rem;">✅ Scan Complete!</h3>
                     <p style="color:#14532d;"><strong>Condition Grade:</strong> <span id="resGrade">PSA 9 Mint</span></p>
                     <p style="color:#14532d;"><strong>Past Sales Valuation:</strong> <span id="resPrice" style="font-size: 1.2rem; font-weight: 800; color: var(--success);">$0.00</span></p>
                     <button class="btn-primary" style="margin-top: 1rem; width: 100%;" onclick="publishListing()">Publish Listing</button>
@@ -171,45 +164,14 @@
         const currentUserId = "user_my_account";
         let marketplaceItems = [];
         let pendingListing = {};
-        // photoSlots[i] = {status: 'checking'|'ok'|'bad', url, reason}
         let photoSlots = [];
         let slotCount = 2;
-
-        let sampleFn = null;
-        let imageCheckReady = false;
 
         const validCategories = [
             "baseball", "basketball", "football", "hockey", "soccer",
             "pokemon", "pokémon", "yugioh", "yu-gi-oh", "magic",
             "marvel", "star wars", "f1", "formula 1", "ufc", "wwe"
         ];
-
-        const VERIFY_PROMPT = `You are the photo validator for a trading card marketplace. The attached image is a photo a seller uploaded for a card listing.
-
-Accept it ONLY if the image clearly shows a collectible trading card (sports card, Pokemon/TCG card, graded slab, or a card in a sleeve/toploader) as the main subject, and the card is legible enough to inspect.
-
-Reject anything else: a wall, floor, carpet, ceiling, a TV or computer screen showing something unrelated, a pet, a person, a random object, a blank/black/blurry frame, or a photo where the card is too small or too obscured to see.
-
-Reply with ONLY a JSON object, no other text:
-{"isCard": true or false, "reason": "short phrase, max 8 words, explaining what you see"}`;
-
-        async function initImageCheck() {
-            const banner = document.getElementById('verifyBanner');
-            try {
-                sampleFn = await claude.use("sample");
-                // Get the one-time permission prompt out of the way at load,
-                // so individual photo scans run without interrupting the user.
-                const perms = await claude.use("permissions");
-                if (perms && sampleFn) await perms.request(["sample"]);
-                const limits = sampleFn ? await sampleFn.limits().catch(() => null) : null;
-                imageCheckReady = !!(sampleFn && limits && limits.images);
-            } catch (e) {
-                imageCheckReady = false;
-            }
-            banner.innerText = imageCheckReady
-                ? "🔍 Photo verification is on — each upload is checked to make sure it really shows a trading card."
-                : "⚠️ Photo verification is unavailable in this view, so uploads can't be checked automatically.";
-        }
 
         function boxTemplate(index, label) {
             return `
@@ -251,74 +213,27 @@ Reply with ONLY a JSON object, no other text:
         function renderSlot(index, state) {
             const box = document.getElementById(`box-${index}`);
             if (!box) return;
-            box.classList.remove('checking', 'ok', 'bad');
+            box.classList.remove('ok');
             const input = `<input type="file" accept="image/jpeg,image/png,image/webp" onchange="handlePhotoUpload(${index}, event)">`;
 
-            if (state.status === 'checking') {
-                box.classList.add('checking');
-                box.innerHTML = `<div class="mini-spinner"></div><p class="box-note">Checking photo…</p>`;
-                return;
-            }
             if (state.status === 'ok') {
                 box.classList.add('ok');
                 box.innerHTML = `
                     <img class="box-thumb" src="${state.url}" alt="">
-                    <p class="box-label" style="color: var(--success);">✅ Card verified</p>
+                    <p class="box-label" style="color: var(--success);">✅ Uploaded</p>
                     <p class="box-note">${slotLabel(index)} · tap to replace</p>
                     ${input}`;
-                return;
             }
-            box.classList.add('bad');
-            box.innerHTML = `
-                <p class="box-label" style="color: var(--danger);">🚫 Not a card</p>
-                <p class="box-note">${state.reason || "This photo doesn't show a trading card."}</p>
-                <p class="box-note">Tap to try another photo</p>
-                ${input}`;
         }
 
-        async function handlePhotoUpload(index, event) {
+        function handlePhotoUpload(index, event) {
             const file = event.target.files && event.target.files[0];
             if (!file) return;
             hidePhotoError();
 
-            // Release any previously accepted photo in this slot.
             if (photoSlots[index] && photoSlots[index].url) URL.revokeObjectURL(photoSlots[index].url);
 
-            if (!imageCheckReady) {
-                photoSlots[index] = { status: 'ok', url: URL.createObjectURL(file) };
-                renderSlot(index, photoSlots[index]);
-                return;
-            }
-
-            photoSlots[index] = { status: 'checking' };
-            renderSlot(index, photoSlots[index]);
-
-            try {
-                const verdict = await sampleFn.json(VERIFY_PROMPT, {
-                    images: file,
-                    modelTier: "quick"
-                });
-                if (verdict && verdict.isCard === true) {
-                    photoSlots[index] = { status: 'ok', url: URL.createObjectURL(file) };
-                } else {
-                    photoSlots[index] = {
-                        status: 'bad',
-                        reason: (verdict && verdict.reason) ? String(verdict.reason).slice(0, 60) : "No trading card detected."
-                    };
-                    showPhotoError("That photo was rejected — please upload a clear photo of the card itself.");
-                }
-            } catch (e) {
-                if (e && e.code === 'not_granted') {
-                    imageCheckReady = false;
-                    document.getElementById('verifyBanner').innerText = "⚠️ Photo verification was declined, so uploads can't be checked automatically.";
-                    photoSlots[index] = { status: 'ok', url: URL.createObjectURL(file) };
-                } else {
-                    photoSlots[index] = { status: 'bad', reason: "Couldn't check this photo. Try again." };
-                    showPhotoError(e && e.code === 'rate_limited'
-                        ? "Too many checks at once — wait a few seconds and re-upload."
-                        : "The photo check failed. Please try uploading again.");
-                }
-            }
+            photoSlots[index] = { status: 'ok', url: URL.createObjectURL(file) };
             renderSlot(index, photoSlots[index]);
         }
 
@@ -335,8 +250,7 @@ Reply with ONLY a JSON object, no other text:
             let isValid = true;
 
             const words = nameInput.split(/\s+/);
-            const hasGibberish = words.some(w => /(.)\1{3,}/.test(w));
-            if (nameInput.length < 5 || words.length < 2 || hasGibberish) {
+            if (nameInput.length < 3 || words.length < 1) {
                 nameErr.style.display = 'block';
                 isValid = false;
             } else {
@@ -344,21 +258,16 @@ Reply with ONLY a JSON object, no other text:
             }
 
             const isCategoryValid = validCategories.some(cat => catInput.includes(cat));
-            if (!isCategoryValid || catInput.length < 3 || /(.)\1{2,}/.test(catInput)) {
+            if (!isCategoryValid && catInput.length < 2) {
                 catErr.style.display = 'block';
                 isValid = false;
             } else {
                 catErr.style.display = 'none';
             }
 
-            if (photoSlots.some(s => s && s.status === 'checking')) {
-                showPhotoError("Still checking a photo — give it a second.");
-                return;
-            }
-
             const validPhotos = verifiedPhotos();
             if (validPhotos.length < 2) {
-                showPhotoError("Please upload at least 2 verified card photos (front and back).");
+                showPhotoError("Please upload at least 2 photos (front and back).");
                 isValid = false;
             } else {
                 hidePhotoError();
@@ -381,7 +290,7 @@ Reply with ONLY a JSON object, no other text:
                 } else if (lowerName.includes("trout") || lowerName.includes("prizm") || lowerName.includes("mahomes") || lowerName.includes("blastoise")) {
                     calculatedPrice = 40.00;
                 } else {
-                    calculatedPrice = Math.floor(Math.random() * 8) + 5;
+                    calculatedPrice = Math.floor(Math.random() * 25) + 10;
                 }
 
                 document.getElementById('resPrice').innerText = `$${calculatedPrice.toFixed(2)}`;
@@ -391,7 +300,7 @@ Reply with ONLY a JSON object, no other text:
                     id: Date.now(),
                     ownerId: currentUserId,
                     title: nameInput,
-                    category: catInput.toUpperCase(),
+                    category: catInput ? catInput.toUpperCase() : "TRADING CARD",
                     grade: "PSA 9 Mint",
                     price: calculatedPrice,
                     photos: validPhotos
@@ -401,7 +310,7 @@ Reply with ONLY a JSON object, no other text:
 
         function publishListing() {
             marketplaceItems.unshift(pendingListing);
-            photoSlots = []; // ownership of the URLs moves to the listing
+            photoSlots = [];
             alert("Listing successfully published!");
             document.getElementById('marketplace-view').classList.add('active');
             document.getElementById('scanner-view').classList.remove('active');
@@ -513,7 +422,6 @@ Reply with ONLY a JSON object, no other text:
 
         resetUploadBoxes();
         renderMarketplace();
-        initImageCheck();
     </script>
 </body>
 </html>
