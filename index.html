@@ -1,35 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>CardSwap - AI Marketplace & Trader</title>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            box-sizing: border-box;
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--background); color: var(--text); line-height: 1.5; }
-
-        header { background-color: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 100; flex-wrap: wrap; gap: 0.5rem; }
-        .logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
-        .nav-tabs { display: flex; gap: 0.5rem; }
-        .nav-btn { background: none; border: none; padding: 0.5rem 1rem; font-weight: 600; color: var(--text-light); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
-        .nav-btn.active, .nav-btn:hover { background-color: #eff6ff; color: var(--primary); }
-
-        main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        main { max-width: 1200px; margin: 2.25rem auto; padding: 0 1rem; }
         .view-section { display: none; }
         .view-section.active { display: block; }
 
@@ -85,70 +54,36 @@
         .modal-gallery img.active-thumb { border-color: var(--primary); }
         .main-modal-img { width: 100%; height: 300px; object-fit: contain; background: #000; border-radius: 8px; margin-bottom: 1rem; }
 
+
+        .hero { margin-bottom: 1.75rem; }
+        .hero h2 { font-size: clamp(1.7rem, 4vw, 2.25rem); letter-spacing: -.03em; margin-bottom: .4rem; }
+        .scanner-container { box-shadow: var(--shadow); }
+        .scanner-subtitle { color: var(--text-light); margin-bottom: 1.25rem; }
+        .verification-note { display:flex; gap:.7rem; align-items:flex-start; background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:10px; padding:.8rem .9rem; margin-bottom:1rem; font-size:.86rem; }
+        .verification-note strong { display:block; margin-bottom:.15rem; }
+        .upload-box input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+        .upload-box.invalid { border-color: var(--danger); background:#fff7f7; }
+        .upload-box.checking { border-color: var(--warning); background:#fffbeb; }
+        .box-status { font-size:.72rem; font-weight:700; }
+        .quality-meter { width:100%; height:5px; background:#e2e8f0; border-radius:999px; overflow:hidden; margin-top:.35rem; }
+        .quality-meter span { display:block; height:100%; width:0; transition:width .25s; }
+        .scan-checklist { display:grid; gap:.45rem; margin:1rem 0; }
+        .check-item { display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--text-light); }
+        .check-item.done { color:var(--success); font-weight:600; }
+        .secure-badge { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .55rem; border-radius:999px; background:#f0fdf4; color:#166534; font-size:.72rem; font-weight:700; margin-bottom:.8rem; }
+        .marketplace-card { transition:transform .18s, box-shadow .18s; }
+        .marketplace-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+        .card-img-container { height:220px; }
+        button:focus-visible, input:focus-visible, .upload-box:focus-within { outline:3px solid rgba(37,99,235,.25); outline-offset:2px; }
+        .btn-secondary { background:#eef2f7; color:var(--text); }
+        .btn-secondary:hover { background:#e2e8f0; }
+        .scan-result-warning { margin-top:1rem; padding:.75rem; border-radius:8px; background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:.82rem; }
+
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) { --background: #0b1220; --surface: #121b2c; --text: #e2e8f0; --text-light: #94a3b8; --border: #26334a; }
             :root:not([data-theme="light"]) .upload-box { background: #0f1727; }
         }
-        :root[data-theme="dark"] { --background: #0b1220; --surface: #121b2c; --text: #e2e8f0; --text-light: #94a3b8; --border: #26334a; }
-    </style>
-</head>
-<body>
-
-    <header>
-        <div class="logo"><span>⚡ CardSwap</span></div>
-        <nav class="nav-tabs">
-            <button class="nav-btn active" onclick="switchTab('marketplace', event)">Marketplace Feed</button>
-            <button class="nav-btn" onclick="switchTab('scanner', event)">+ Scan &amp; List Card</button>
-        </nav>
-    </header>
-
-    <main>
-        <section id="marketplace-view" class="view-section active">
-            <h2>Community Marketplace</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Click any card image to view all uploaded detail photos.</p>
-            <div class="card-grid" id="listing-grid"></div>
-        </section>
-
-        <section id="scanner-view" class="view-section">
-            <div class="scanner-container">
-                <h2>AI Card Scanner &amp; Pricer</h2>
-                <p style="color: var(--text-light); margin-bottom: 1.5rem;">Upload front, back, and any extra detail photos of your card.</p>
-
-                <div id="input-form-container">
-                    <label style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">Upload Photos (Front, Back, &amp; Extras)</label>
-                    <div class="upload-grid" id="uploadGridContainer"></div>
-                    <div id="photoError"></div>
-                    <button class="btn-primary" style="background: var(--text-light); margin-bottom: 1.5rem; font-size: 0.85rem; padding: 0.4rem 0.8rem;" onclick="addMorePhotoBox()">+ Add Another Photo Angle</button>
-
-                    <div class="form-group">
-                        <label>Card Name &amp; Year (e.g., 2023 Topps Shohei Ohtani)</label>
-                        <input type="text" id="cardNameInput" placeholder="Enter card title...">
-                        <div class="error-text" id="nameError">Must enter a valid card title (at least 2 words).</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Category (e.g., Baseball, Pokémon, Basketball, Football)</label>
-                        <input type="text" id="cardCategoryInput" placeholder="Enter category...">
-                        <div class="error-text" id="catError">Please use a recognized category (e.g., Baseball, Pokémon).</div>
-                    </div>
-
-                    <button class="btn-primary" style="width: 100%; padding: 0.75rem;" onclick="startAIScan()">Run AI Scan &amp; Price</button>
-                </div>
-
-                <div id="scanning-overlay">
-                    <div class="spinner"></div>
-                    <p id="scan-status-text">Analyzing card condition and checking past sales data...</p>
-                </div>
-
-                <div id="scan-results-preview" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
-                    <h3 style="color: var(--success); margin-bottom: 0.5rem;">✅ Scan Complete!</h3>
-                    <p style="color:#14532d;"><strong>Condition Grade:</strong> <span id="resGrade">PSA 9 Mint</span></p>
-                    <p style="color:#14532d;"><strong>Past Sales Valuation:</strong> <span id="resPrice" style="font-size: 1.2rem; font-weight: 800; color: var(--success);">$0.00</span></p>
-                    <button class="btn-primary" style="margin-top: 1rem; width: 100%;" onclick="publishListing()">Publish Listing</button>
-                </div>
-            </div>
-        </section>
-    </main>
+            </main>
 
     <div class="modal-overlay" id="photoModal">
         <div class="modal-content">
@@ -160,25 +95,72 @@
         </div>
     </div>
 
-    <script>
-        const currentUserId = "user_my_account";
-        let marketplaceItems = [];
-        let pendingListing = {};
-        let photoSlots = [];
-        let slotCount = 2;
 
-        const validCategories = [
-            "baseball", "basketball", "football", "hockey", "soccer",
-            "pokemon", "pokémon", "yugioh", "yu-gi-oh", "magic",
-            "marvel", "star wars", "f1", "formula 1", "ufc", "wwe"
-        ];
+    <script type="module">
+        import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
-        function boxTemplate(index, label) {
-            return `
-                <div class="upload-box" id="box-${index}">
+        const MODEL = "Xenova/clip-vit-base-patch32";
+
+        window.cardAI = {
+            classifier: null,
+            loading: null,
+
+            async load() {
+                if (this.classifier) return this.classifier;
+                if (this.loading) return this.loading;
+
+                const status = document.getElementById("scan-status-text");
+                if (status) status.textContent = "Loading the card-checking AI…";
+
+                this.loading = pipeline("zero-shot-image-classification", MODEL, {
+                    device: "webgpu"
+                }).catch(async () => {
+                    // WebGPU is not available on every browser, so fall back to WASM.
+                    return pipeline("zero-shot-image-classification", MODEL);
+                });
+
+                try {
+                    this.classifier = await this.loading;
+                    const badge = document.getElementById("aiStatus");
+                    if (badge) {
+                        badge.textContent = "🤖 Card AI ready";
+                        badge.style.background = "#f0fdf4";
+                        badge.style.color = "#166534";
+                    }
+                    return this.classifier;
+                } catch (error) {
+                    const badge = document.getElementById("aiStatus");
+                    if (badge) {
+                        badge.textContent = "⚠️ Card AI unavailable";
+                        badge.style.background = "#fff7ed";
+                        badge.style.color = "#9a3412";
+                    }
+                    throw error;
+                } finally {
+                    this.loading = null;
+                }
+            },
+
+            async classify(imageUrl) {
+                const classifier = await this.load();
+
+                return classifier(imageUrl, [
+                    "a photo of a physical trading card",
+                    "a photo of a sports trading card",
+                    "a photo of a Pokémon or collectible card",
+                    "a photo of a Yu-Gi-Oh or Magic trading card",
+                    "a photo of a credit card or ID card",
+                    "a photo of a piece of paper or document",
+                    "a photo of a phone, tablet, or computer screen",
+                    "a photo of a person",
+                    "a photo of an object that is not a card"
+                ]);
+            }
+                            <div class="upload-box" id="box-${index}" tabindex="0">
                     <p class="box-label">📸 ${label}</p>
-                    <p class="box-note">Tap to choose a photo</p>
-                    <input type="file" accept="image/jpeg,image/png,image/webp" onchange="handlePhotoUpload(${index}, event)">
+                    <p class="box-note">Tap to take or choose a card photo</p>
+                    <span class="box-status">Not uploaded</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="handlePhotoUpload(${index}, event)">
                 </div>`;
         }
 
@@ -213,28 +195,139 @@
         function renderSlot(index, state) {
             const box = document.getElementById(`box-${index}`);
             if (!box) return;
-            box.classList.remove('ok');
-            const input = `<input type="file" accept="image/jpeg,image/png,image/webp" onchange="handlePhotoUpload(${index}, event)">`;
+
+            box.classList.remove('ok', 'invalid', 'checking');
+
+            const input = `<input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="handlePhotoUpload(${index}, event)">`;
+
+            if (state.status === 'checking') {
+                box.classList.add('checking');
+                box.innerHTML = `
+                    <div class="spinner" style="width:26px;height:26px;border-width:3px;margin:0 0 .25rem"></div>
+                    <p class="box-label" style="color:var(--warning)">Checking photo…</p>
+                    <p class="box-note">Looking for a real trading-card shape</p>
+                    ${input}`;
+                return;
+            }
 
             if (state.status === 'ok') {
                 box.classList.add('ok');
                 box.innerHTML = `
-                    <img class="box-thumb" src="${state.url}" alt="">
-                    <p class="box-label" style="color: var(--success);">✅ Uploaded</p>
-                    <p class="box-note">${slotLabel(index)} · tap to replace</p>
+                    <img class="box-thumb" src="${state.url}" alt="Uploaded card photo">
+                    <p class="box-label" style="color:var(--success);">✅ Card photo accepted</p>
+                    <p class="box-note">${slotLabel(index)} · ${(state.confidence * 100).toFixed(0)}% card-like</p>
+                    <div class="quality-meter"><span style="width:${Math.min(100, state.confidence * 100)}%;background:var(--success)"></span></div>
                     ${input}`;
+                return;
+            }
+
+            if (state.status === 'error') {
+                box.classList.add('invalid');
+                box.innerHTML = `
+                    <p style="font-size:1.35rem">⚠️</p>
+                    <p class="box-label" style="color:var(--danger);">Photo rejected</p>
+                    <p class="box-note">${escapeHtml(state.reason)}</p>
+                    ${input}`;
+                return;
+            }
+
+            box.innerHTML = `
+                <p class="box-label">📸 ${slotLabel(index)}</p>
+                <p class="box-note">Tap to take or choose a card photo</p>
+                <span class="box-status">AI verification required</span>
+                ${input}`;
+        }
+
+        async function handlePhotoUpload(index, event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            hidePhotoError();
+
+            if (!file.type.startsWith('image/')) {
+                showPhotoError("Please choose an image file.");
+                return;
+            }
+
+            if (file.size > 12 * 1024 * 1024) {
+                showPhotoError("That image is too large. Please use a photo under 12 MB.");
+                return;
+            }
+                        try {
+                if (!window.cardAI) {
+                    return {
+                        accepted: false,
+                        reason: "The card AI is still loading. Please wait a moment and try again."
+                    };
+                }
+
+                const predictions = await window.cardAI.classify(imageUrl);
+
+                const scores = Object.fromEntries(
+                    predictions.map(p => [p.label, p.score])
+                );
+
+                const tradingCardScore = Math.max(
+                    scores["a photo of a physical trading card"] || 0,
+                    scores["a photo of a sports trading card"] || 0,
+                    scores["a photo of a Pokémon or collectible card"] || 0,
+                    scores["a photo of a Yu-Gi-Oh or Magic trading card"] || 0
+                );
+
+                const nonCardScores = [
+                    scores["a photo of a credit card or ID card"] || 0,
+                    scores["a photo of a piece of paper or document"] || 0,
+                    scores["a photo of a phone, tablet, or computer screen"] || 0,
+                    scores["a photo of a person"] || 0,
+                    scores["a photo of an object that is not a card"] || 0
+                ];
+
+                const strongestNonCard = Math.max(...nonCardScores);
+
+                // CLIP is a general-purpose vision-language model rather than a
+                // trading-card-specific detector. Use a conservative threshold
+                // and require the card concept to beat the non-card concepts.
+                const margin = tradingCardScore - strongestNonCard;
+
+                if (tradingCardScore < 0.34 || margin < 0.06) {
+                    return {
+                        accepted: false,
+                        reason: "The AI could not confidently identify this as a physical trading card. Make sure the full card is visible, fills most of the frame, and is not on a screen."
+                    };
+                }
+
+                return {
+                    accepted: true,
+                    confidence: tradingCardScore,
+                    aiScore: tradingCardScore,
+                    nonCardScore: strongestNonCard,
+                    predictions
+                };
+            } catch (error) {
+                console.error("Card AI error:", error);
+                return {
+                    accepted: false,
+                    reason: "The card AI could not analyze this image. Check your internet connection and try again."
+                };
+            } finally {
+                URL.revokeObjectURL(imageUrl);
             }
         }
 
-        function handlePhotoUpload(index, event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-            hidePhotoError();
-
-            if (photoSlots[index] && photoSlots[index].url) URL.revokeObjectURL(photoSlots[index].url);
-
-            photoSlots[index] = { status: 'ok', url: URL.createObjectURL(file) };
-            renderSlot(index, photoSlots[index]);
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error("Could not read image."));
+                };
+                img.src = url;
+            });
         }
 
         function verifiedPhotos() {
@@ -249,72 +342,14 @@
 
             let isValid = true;
 
-            const words = nameInput.split(/\s+/);
-            if (nameInput.length < 3 || words.length < 1) {
+            const words = nameInput ? nameInput.split(/\s+/).filter(Boolean) : [];
+            if (nameInput.length < 3 || words.length < 2) {
                 nameErr.style.display = 'block';
                 isValid = false;
             } else {
                 nameErr.style.display = 'none';
             }
-
-            const isCategoryValid = validCategories.some(cat => catInput.includes(cat));
-            if (!isCategoryValid && catInput.length < 2) {
-                catErr.style.display = 'block';
-                isValid = false;
-            } else {
-                catErr.style.display = 'none';
-            }
-
-            const validPhotos = verifiedPhotos();
-            if (validPhotos.length < 2) {
-                showPhotoError("Please upload at least 2 photos (front and back).");
-                isValid = false;
-            } else {
-                hidePhotoError();
-            }
-
-            if (!isValid) return;
-
-            document.getElementById('input-form-container').style.display = 'none';
-            document.getElementById('scanning-overlay').style.display = 'block';
-
-            setTimeout(() => {
-                document.getElementById('scanning-overlay').style.display = 'none';
-                document.getElementById('scan-results-preview').style.display = 'block';
-
-                const lowerName = nameInput.toLowerCase();
-                let calculatedPrice;
-
-                if (lowerName.includes("ohtani") || lowerName.includes("jordan") || lowerName.includes("charizard")) {
-                    calculatedPrice = 160.00;
-                } else if (lowerName.includes("trout") || lowerName.includes("prizm") || lowerName.includes("mahomes") || lowerName.includes("blastoise")) {
-                    calculatedPrice = 40.00;
-                } else {
-                    calculatedPrice = Math.floor(Math.random() * 25) + 10;
-                }
-
-                document.getElementById('resPrice').innerText = `$${calculatedPrice.toFixed(2)}`;
-                document.getElementById('resGrade').innerText = "PSA 9 Mint (Verified Past Sales)";
-
-                pendingListing = {
-                    id: Date.now(),
-                    ownerId: currentUserId,
-                    title: nameInput,
-                    category: catInput ? catInput.toUpperCase() : "TRADING CARD",
-                    grade: "PSA 9 Mint",
-                    price: calculatedPrice,
-                    photos: validPhotos
-                };
-            }, 1500);
-        }
-
-        function publishListing() {
-            marketplaceItems.unshift(pendingListing);
-            photoSlots = [];
-            alert("Listing successfully published!");
-            document.getElementById('marketplace-view').classList.add('active');
-            document.getElementById('scanner-view').classList.remove('active');
-            document.getElementById('scan-results-preview').style.display = 'none';
+                        document.getElementById('scan-results-preview').style.display = 'none';
             document.getElementById('input-form-container').style.display = 'block';
             document.getElementById('cardNameInput').value = '';
             document.getElementById('cardCategoryInput').value = '';
@@ -343,6 +378,8 @@
 
         function deleteListing(id) {
             if (confirm("Are you sure you want to delete this listing?")) {
+                const item = marketplaceItems.find(item => item.id === id);
+                if (item?.photos) item.photos.forEach(url => URL.revokeObjectURL(url));
                 marketplaceItems = marketplaceItems.filter(item => item.id !== id);
                 renderMarketplace();
             }
@@ -350,6 +387,12 @@
 
         function triggerTrade(title, price) {
             alert(`Select one of your cards to offer in a fair-value trade match for: ${title} ($${price.toFixed(2)})`);
+        }
+
+        function triggerTradeById(id) {
+            const item = marketplaceItems.find(i => i.id === id);
+            if (!item) return;
+            triggerTrade(item.title, item.price);
         }
 
         function openCardModal(itemId) {
@@ -380,8 +423,7 @@
         function closeModal() {
             document.getElementById('photoModal').style.display = 'none';
         }
-
-        function escapeHtml(s) {
+         function escapeHtml(s) {
             return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
 
@@ -401,7 +443,7 @@
                 const isOwner = (item.ownerId === currentUserId);
                 const actionButtonHTML = isOwner
                     ? `<button class="btn-danger flex-grow" onclick="deleteListing(${item.id})">Delete Listing</button>`
-                    : `<button class="btn-primary flex-grow" onclick="triggerTrade('${escapeHtml(item.title).replace(/'/g, "&#39;")}', ${item.price})">Trade / Buy</button>`;
+                    : `<button class="btn-primary flex-grow" onclick="triggerTradeById(${item.id})">Trade / Buy</button>`;
 
                 grid.innerHTML += `
                     <div class="marketplace-card">
