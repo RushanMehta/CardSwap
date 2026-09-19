@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -510,7 +510,7 @@
         <button class="nav-btn" onclick="switchTab('scanner', event)">scan & list</button>
     </div>
 
-    <!-- Fully Optimized & Fault-Tolerant Application Logic -->
+    <!-- Application Script with Balanced Detection and Un-stuckable Button Logic -->
     <script>
         const currentUserId = "user_my_account";
         let marketplaceItems = [];
@@ -615,9 +615,7 @@
 
         async function getCardDetector() {
             if (cardDetectorPromise) return cardDetectorPromise;
-            if (!window.CardSwapPipeline) {
-                return null;
-            }
+            if (!window.CardSwapPipeline) return null;
 
             cardDetectorPromise = (async () => {
                 setDetectorStatus("Loading AI card detector…");
@@ -668,17 +666,18 @@
 
                 const detections = await detector(url, labels);
                 if (!detections || detections.length === 0) {
-                    return { accepted: true, score: 0.5, reason: "Accepted photo." };
+                    return { accepted: false, score: 0, reason: "No matching card structure found." };
                 }
 
                 const best = detections.sort((a, b) => b.score - a.score)[0];
-                const accepted = best && best.score >= 0.10;
+                // Balanced threshold (0.12): Rejects random clutter/walls, accepts valid card photos at various angles
+                const accepted = best && best.score >= 0.12;
 
                 return {
                     accepted: accepted,
-                    score: best ? best.score : 0.5,
+                    score: best ? best.score : 0,
                     label: best ? best.label : "unknown",
-                    reason: "Photo verified successfully."
+                    reason: accepted ? "Card verified successfully." : "Photo does not appear to clearly feature a trading card."
                 };
             } catch (err) {
                 return { accepted: true, score: 1.0, reason: "Bypassed successfully." };
@@ -686,12 +685,15 @@
         }
 
         async function verifyAllPhotosAsCards(urls) {
-            setDetectorStatus("AI is checking your card photos…", "ready");
+            setDetectorStatus("AI is checking your card photos…", "loading");
             const results = [];
             
             for (let i = 0; i < urls.length; i++) {
                 const res = await detectTradingCard(urls[i]);
                 results.push(res);
+                if (!res.accepted) {
+                    return { accepted: false, results, rejectedIndex: i };
+                }
             }
             return { accepted: true, results, rejectedIndex: -1 };
         }
@@ -742,12 +744,22 @@
             if (scanningOverlay) scanningOverlay.style.display = 'block';
             if (scanStatusText) scanStatusText.innerText = 'Verifying your card details…';
 
+            // Fault-tolerant wrapper with timeout so the button never freezes or gets stuck
             try {
                 const verificationPromise = verifyAllPhotosAsCards(validPhotos);
-                const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ accepted: true }), 3000));
-                await Promise.race([verificationPromise, timeoutPromise]);
+                const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ accepted: true }), 4000));
+                
+                const verification = await Promise.race([verificationPromise, timeoutPromise]);
+
+                if (!verification.accepted) {
+                    if (formContainer) formContainer.style.display = 'block';
+                    if (scanningOverlay) scanningOverlay.style.display = 'none';
+                    const badPhoto = (verification.rejectedIndex !== undefined ? verification.rejectedIndex : 0) + 1;
+                    showPhotoError(`Photo ${badPhoto} does not look like a trading card. Please replace it.`);
+                    return;
+                }
             } catch (error) {
-                // Silent failover to prevent locking up
+                console.warn("Scan flow recovered:", error);
             }
 
             if (scanStatusText) scanStatusText.innerText = 'Card verified. Preparing listing…';
